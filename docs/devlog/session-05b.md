@@ -37,3 +37,21 @@
 
 - G1 verified against the code: no command has `--version`, and `t3x-sim` already uses `--version` for the simulated firmware version (excluded from G1).
 - Every file and section referenced from ROADMAP exists.
+
+## 5. Revision (05c, same day)
+
+The 05b version of `docs/MAINTAINERS.md` used the maintainer's own machine paths and
+GitHub username in its commands. That suited a private checklist, not a public document. 05c rewrites it
+for any maintainer: commands run from the workspace folder (`./aixun …`, `git -C project …`), the
+username and noreply address are described rather than written in, and the first-publication record is a
+short summary. Added: saving the token (`credential.helper store`, with its risk) and commit messages.
+
+## 6. Revision (05d, same day)
+
+| Problem | Change |
+|---|---|
+| The public documents used "session" and "delivery" (`t3x_sessionXX.zip`) without ever saying what they were or where the zips came from | README section "How this project is developed": AI-assisted sessions, each handed over as a zip snapshot of the project folder; an AI assistant is not needed, it made development faster; a snapshot is made with `git archive`. Elsewhere the zips are called snapshots |
+| WORKFLOW.md (314 lines) repeated INSTALLATION.md | Rewritten as a ~150-line reference: commands, snapshots, simulator, moving, workspace troubleshooting, manual equivalents. Firmware provenance and the ModemManager check/rule moved to INSTALLATION.md |
+| INSTALLATION.md used a shell variable for the workspace | Explicit `~/aixun`, with one sentence on changing it |
+| SCRIPTS_GUIDE.md (474 lines) repeated setup steps and long sample outputs; referred to a `t3xupdate.py` that isn't in the repository root | Condensed to background, the standalone scripts, what is normal during a flash, failures and technical notes |
+| DEVELOPMENT_REPORT referred to commits of the private development history | Removed; status table updated |

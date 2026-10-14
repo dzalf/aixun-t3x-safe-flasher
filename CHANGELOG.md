@@ -8,9 +8,17 @@ All notable changes. Dates are when the change was validated. Development detail
 ### Documentation
 - ROADMAP.md: planned work, where help is wanted, good first issues, what is out of scope.
 - README: folder structure of the repository and of the workspace.
-- docs/MAINTAINERS.md rewritten: explicit commands with full paths, personal access token (permissions, error
-  messages), commit identity, everyday pushes, releases.
-- DEVELOPMENT_REPORT: L11 closed; feature backlog moved to ROADMAP.md.
+- docs/MAINTAINERS.md rewritten: explicit commands run from the workspace folder (no personal paths or
+  account details), personal access token (permissions, error messages, saving it), commit identity and
+  messages, everyday pushes, releases.
+- DEVELOPMENT_REPORT: L11 closed; feature backlog moved to ROADMAP.md; private commit references removed;
+  status table brought up to date.
+- README: "How this project is developed": AI-assisted sessions, zip snapshots, and that neither is needed
+  to contribute. CONTRIBUTING: a note on AI assistants.
+- docs/WORKFLOW.md rewritten as a short reference for `./aixun` (commands, snapshots, simulator);
+  installation steps, firmware provenance and the ModemManager rule moved to INSTALLATION.md.
+- INSTALLATION.md: no shell variables; firmware provenance; ModemManager check and optional rule.
+- docs/SCRIPTS_GUIDE.md condensed to background, technical notes and the standalone scripts.
 
 ## 0.1.0 — 2026-10-14 (first release of this repository)
 
@@ -31,7 +39,7 @@ Hardware-validated: T3BS 1.16 → 1.15 → 1.16 (GUI, twice) on a Raspberry Pi 5
 - Flash page: chunk map, live speed and time left (seeded from history).
 - Downgrade warnings (GUI and CLI), ModemManager notice, opt-in "newer version listed" notice.
 - Self-contained workspace manager `tools/aixun.sh` (`./aixun`): setup, test, probe, flash, gui,
-  online, history, apply/accept/rollback of zip deliveries, reinstall (offline-aware), status,
+  online, history, apply/accept/rollback of zip snapshots, reinstall (offline-aware), status,
   check-publish. Distribution-aware hints (apt, dnf, zypper, pacman).
 - 104 tests, including byte-for-byte equivalence with the hardware-proven script and headless GUI tests.
 - INSTALLATION.md, CONTRIBUTING.md, GitHub issue/PR templates and a test workflow.

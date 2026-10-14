@@ -1,25 +1,21 @@
-# Standalone scripts guide: `t3x_probe.py` and `t3xupdate_safe.py`
+# Background, technical notes and the standalone scripts
 
-This is the original, script-based procedure (October 2026) that first updated a T3BS from
-1.06 to 1.16. It still works: the two scripts in the repository root are now thin wrappers that
-run the `t3x` package straight from a checkout, so no installation beyond `pyserial` is needed.
+Why Linux, how to tell a T3B from a T3BS, the serial protocol and file format, and how to use the two
+scripts in the repository root (`t3x_probe.py`, `t3xupdate_safe.py`) without installing anything.
 
-For most people the **workspace + GUI** route in [INSTALLATION.md](../INSTALLATION.md) is easier
-and safer. Use this guide if you want a minimal setup or are scripting the update.
-
-The original upstream updater `t3xupdate.py` (Michael Niewöhner) is kept unchanged in
-`tests/reference/t3xupdate_upstream.py`.
+The scripts are the names of the original console procedure that first updated a T3BS from 1.06 to 1.16
+in October 2026. They are now thin wrappers that run the `t3x` package straight from a checkout. For most
+people the workspace + GUI route in [INSTALLATION.md](../INSTALLATION.md) is easier. The original
+upstream updater (Michael Niewöhner) is kept unchanged in `tests/reference/t3xupdate_upstream.py`.
 
 ## Contents
 
 1. [Why not Windows?](#1-why-not-windows)
 2. [T3B vs T3BS: which firmware?](#2-t3b-vs-t3bs-which-firmware)
-3. [Setup (Linux)](#3-setup-linux)
-4. [Step 1: probe the station](#4-step-1-probe-the-station-read-only)
-5. [Step 2: flash](#5-step-2-flash)
-6. [Expected outputs](#6-expected-outputs)
-7. [Troubleshooting](#7-troubleshooting)
-8. [Technical notes](#8-technical-notes)
+3. [Using the standalone scripts](#3-using-the-standalone-scripts)
+4. [What is normal during a flash](#4-what-is-normal-during-a-flash)
+5. [If something fails](#5-if-something-fails)
+6. [Technical notes](#6-technical-notes)
 
 ---
 
@@ -59,7 +55,8 @@ decide by the sticker, the stand or the menu.** The only reliable way to know
 is to ask the station:
 
 ```bash
-python3 t3x_probe.py
+./aixun probe
+# or, without the workspace: python3 t3x_probe.py
 ```
 
 Look at the `Product (field2)` line:
@@ -90,299 +87,63 @@ mismatch.
 
 ---
 
-## 3. Setup (Linux)
+## 3. Using the standalone scripts
 
-### 3.1 System packages
-
-```bash
-sudo apt update
-sudo apt install -y git python3 python3-venv python3-pip
-```
-
-### 3.2 Clone the repository
+Only `pyserial` is needed. In a clone of the repository:
 
 ```bash
-git clone https://github.com/dzalf/aixun-t3x-safe-flasher.git
-cd aixun-t3x-safe-flasher
-```
-
-### 3.3 Create and enable the virtual environment
-
-Kali and recent Debian-based systems block `pip install` into the system
-Python (`externally-managed-environment`), so use a virtual environment:
-
-```bash
-# Create it (once)
 python3 -m venv venv
+# a private Python environment in the clone (system pip is blocked on Kali and recent Debian)
 
-# Enable it (every new terminal)
-source venv/bin/activate
+venv/bin/python -m pip install pyserial
+# the only dependency of the scripts
 
-# Install the dependencies inside it (once)
-pip install --upgrade pip
-pip install pyserial
+venv/bin/python t3x_probe.py --fw JC_M_T3BS_1.16.bin --reader-test 50
+# READ-ONLY full pre-flash check; do not flash unless every line shows [PASS]
+
+venv/bin/python t3xupdate_safe.py -d JC_M_T3BS_1.16.bin
+# flash: prints a pre-flight summary and waits until you type yes
 ```
 
-When the environment is active, the prompt shows `(venv)`, for example:
+Serial-port permission and connecting the station: INSTALLATION.md §3 and §8.
 
-```
-(venv) user@host:~/aixun-t3x-safe-flasher$
-```
-
-Useful checks and commands:
-
-```bash
-which python3                                   # should point to .../venv/bin/python3
-python3 -c "import serial; print('OK')"         # dependency present
-deactivate                                      # leave the environment when finished
-```
-
-Run all the commands below **with the environment enabled**. If you open a
-new terminal, `cd` into the repository and run `source venv/bin/activate`
-again.
-
-### 3.4 Serial-port permission
-
-```bash
-sudo usermod -aG dialout $USER     # then log out and back in
-```
-
-Alternatively, run the scripts with `sudo venv/bin/python3 ...`. Plain
-`sudo python3` uses the system Python, which won't see the packages
-installed in the virtual environment.
-
-### 3.5 Connect the station
-
-Connect the station **directly**: no USB hub, and preferably a USB-A → USB-C
-data cable. Then confirm Linux sees it:
-
-```bash
-python3 -m serial.tools.list_ports -v
-```
-
-Expected:
-
-```
-/dev/ttyUSB0
-    desc: JCID_T3B
-    hwid: USB VID:PID=0403:6001 SER=JCID_T3B_XXXXXXXXXXXX LOCATION=3-1
-```
-
-On a Raspberry Pi you will also see `/dev/ttyAMA10`. That is the Pi's own
-UART; ignore it.
-
-Optional kernel check:
-
-```bash
-dmesg | tail            # "FTDI USB Serial Device converter now attached to ttyUSB0"
-```
-
-### 3.6 Get the firmware
-
-Download the `.bin` files from the unofficial archive
-<https://aixun-updates.github.io/>. Download **both**:
-
-- the target firmware, e.g. `JC_M_T3BS_1.16.bin`
-- the firmware currently on your station, e.g. `JC_M_T3BS_1.06.bin`, as a
-  rollback image. There is no known command to read the firmware back from
-  the station, so this file is your only backup.
-
----
-
-## 4. Step 1: probe the station (read-only)
-
-The probe sends **only** `JC_identity` and `JC_version`, the same queries
-the updater sends before it does anything. A whitelist in the code prevents
-anything else from being sent. In particular, it never echoes the version
-string back to the station, which is what triggers the bootloader.
-
-```bash
-# Basic probe
-python3 t3x_probe.py
-
-# Probe + validate the update file against the station
-python3 t3x_probe.py --fw JC_M_T3BS_1.16.bin
-
-# Full pre-flash check (recommended)
-python3 t3x_probe.py --fw JC_M_T3BS_1.16.bin --reader-test 50
-```
-
-| Option | Description |
+| `t3x_probe.py` option | Description |
 |---|---|
-| `--fw FILE` | Offline file check: `JCID` magic, declared size, CRC16, product and firmware version, plus a vector-table sanity check. Then it compares the file's product with the station's. |
-| `--reader-test N` | Repeats each query N times using the **original updater's** `read(1)+read_all()` method, and checks every reply is complete |
-| `--hardware` | Opt-in: also sends `JC_hardware`. It looks like a read-only query but is undocumented. Leave it out if unsure. |
+| `--fw FILE` | Offline file check (magic, size, CRC16, product, version, vector table), then compares the file's product with the station's |
+| `--reader-test N` | Repeats each query N times with the **original updater's** `read(1)+read_all()` method and checks every reply is complete |
+| `--hardware` | Opt-in: also sends `JC_hardware`, an undocumented query that looks read-only. Leave it out if unsure |
 | `--port DEV` | Use a specific port instead of auto-detecting by USB serial number |
 | `--repeat N` | Number of query rounds (default 3) |
 
-Exit code `0` means all checks passed; `2` means at least one failed.
-**Do not flash unless every line shows `[PASS]`.**
+The probe sends **only** `JC_identity` and `JC_version`; a whitelist in the code prevents anything else.
+It never echoes the version string back, which is what triggers the bootloader. Exit code `0` = all checks
+passed, `2` = at least one failed.
 
----
-
-## 5. Step 2: flash
-
-```bash
-python3 t3xupdate_safe.py -d JC_M_T3BS_1.16.bin
-```
-
-The script prints a pre-flight summary and waits until you type `yes`.
-
-| Option | Description |
+| `t3xupdate_safe.py` option | Description |
 |---|---|
-| `-d`, `--debug` | Show every TX/RX on screen. Everything is always written to the log file regardless. |
+| `-d`, `--debug` | Show every TX/RX on screen (always written to the log file) |
 | `--port DEV` | Use an explicit serial port |
-| `--wait S` | Seconds to wait for the station to re-enumerate after a reset (default 20) |
+| `--wait S` | Seconds to wait for the station to re-appear after a reset (default 20) |
 | `--yes` | Skip the confirmation prompt |
 
-A full timestamped log is written to `t3x_flash_YYYYMMDD_HHMMSS.log`.
+A timestamped log `t3x_flash_YYYYMMDD_HHMMSS.log` is written for every run. It contains the station's USB
+serial number: replace it before posting the log anywhere.
 
-**During the flash:** don't touch the cable or the station, and keep the
-host on a stable power supply. On a Raspberry Pi 5, use the official 27 W
-supply or equivalent.
-
-The original updater still works too:
-
-```bash
-python3 t3xupdate.py -d JC_M_T3BS_1.16.bin
-```
-
-### What `t3xupdate_safe.py` changes compared with `t3xupdate.py`
+**What the safe updater changes compared with the original `t3xupdate.py`:**
 
 | Change | Reason |
 |---|---|
 | Reads each reply until the line has been quiet for 100 ms | An ACK split across two USB packets can't be misread |
 | Polls for up to `--wait` s after each reset instead of sleeping a fixed 3 s | Slow re-enumeration no longer causes "No T3x found" |
 | Falls back to the single `0403:6001` device present if the serial number changes | Copes with a bootloader that enumerates under a different serial number |
-| JCID magic, size, CRC16 **and a Cortex-M vector-table check** before any serial traffic | Rejects corrupt files or files for the wrong flash layout |
-| Pre-flight confirmation + timestamped log | You can review the plan before committing, and a failure can be diagnosed afterwards |
+| Magic, size, CRC16 **and a Cortex-M vector-table check** before any serial traffic | Rejects corrupt files or files for the wrong flash layout |
+| Pre-flight confirmation + timestamped log | You can review the plan first, and diagnose a failure afterwards |
 | Every error message says whether it is safe to re-run | Prevents a panicked power-off while the station is in the bootloader |
 
 ---
 
-## 6. Expected outputs
+## 4. What is normal during a flash
 
-These are real outputs from the test unit (T3BS hardware, firmware 1.06 →
-1.16, Raspberry Pi 5 running Kali Linux). Serial numbers are redacted.
-
-### 6.1 Probe with file check and reader test
-
-```
-$ python3 t3x_probe.py --fw JC_M_T3BS_1.16.bin --reader-test 50
-
-=== USB / host side =============================================
-  Port            : /dev/ttyUSB0
-  VID:PID         : 0403:6001
-  Serial number   : JCID_T3B_XXXXXXXXXXXX
-  Manufacturer    : JCID
-  Product         : JCID_T3B
-  Location        : 3-1
-  bcdDevice (chip rev): 0400
-  USB spec        : 1.10
-  Speed (Mbit/s)  : 12
-  bMaxPower       : 100mA
-  Configurations  : 1
-  Kernel driver   : ftdi_sio
-  FTDI latency    : 16 ms
-
-=== Firmware file (offline check, nothing sent) =================
-  File            : JC_M_T3BS_1.16.bin
-  Size            : 166144 bytes
-  Magic           : JCID (update file)
-  Declared size   : 166144 bytes -> OK
-  CRC16           : file 1EE0, calc 1EE0 -> OK
-  Header name     : b'JC_M_T3BS'
-  Product         : T3BS
-  Version         : 1.16
-  Vector table    : payload 165888 B (limit 190464) OK; SP 0x20005508 OK; Reset 0x08010165 OK
-
-=== Serial session (115200 8N1, same as updater) ================
-  Unsolicited data in 1 s: 0 bytes
-
-  [1/3] TX JC_identity  -> 7 bytes, first byte after 35.7 ms
-      RX: b'JC_User'
-  [1/3] TX JC_version   -> 21 bytes, first byte after 46.2 ms
-      RX: b'JC_M_T3BS_version1.06'
-  ...
-
-=== Reader test: original read(1)+read_all, 50x per query =======
-  100/100 replies complete and identical
-
-=== Decoded =====================================================
-  Identity        : b'JC_User' -> APPLICATION (normal firmware running)
-  Version string  : b'JC_M_T3BS_version1.06'
-  Fields ('_')    : ['JC', 'M', 'T3BS', 'version1.06']
-  Product (field2): T3BS
-  FW version      : 1.06
-
-=== Verdict =====================================================
-  [PASS] Station replies to JC_identity
-  [PASS] Identity replies consistent
-  [PASS] Station replies to JC_version
-  [PASS] Version replies consistent
-  [PASS] Station in application mode (JC_User)
-  [PASS] Updater's read method returns complete replies
-  [PASS] Update file valid (magic/size/CRC/vectors)
-  [PASS] Update product matches station
-
-  Station v1.06 vs file v1.16
-
-  All checks passed. Communication looks safe to proceed.
-```
-
-### 6.2 Successful flash
-
-```
-$ python3 t3xupdate_safe.py -d JC_M_T3BS_1.16.bin
-INFO: Full log: t3x_flash_20261008_170022.log
-INFO: Vector table: payload 165888 B (limit 190464) OK; SP 0x20005508 OK; Reset 0x08010165 OK
-INFO: Update file: T3BS v1.16 (166144 bytes, CRC 1EE0 OK)
-DEBUG: Opened /dev/ttyUSB0
-DEBUG: TX (10): b'JC_version'
-DEBUG: RX (21) after 150 ms: b'JC_M_T3BS_version1.06'
-DEBUG: TX (11): b'JC_identity'
-DEBUG: RX (7) after 200 ms: b'JC_User'
-INFO: Station: identity b'JC_User', version string b'JC_M_T3BS_version1.06'
-
-  ---- Pre-flight ------------------------------------
-  Station : T3BS v1.06 (JC_User)
-  File    : T3BS v1.16  (166144 bytes, 82 chunks)
-  Do not unplug USB or switch off the station until this script finishes.
-  Type 'yes' to flash: yes
-DEBUG: TX (11): b'JC_identity'
-DEBUG: RX (7) after 202 ms: b'JC_User'
-INFO: Entering bootloader...
-DEBUG: TX (10): b'JC_version'
-DEBUG: RX (21) after 201 ms: b'JC_M_T3BS_version1.06'
-DEBUG: TX (21): b'JC_M_T3BS_version1.06'
-WARNING: Device dropped off USB (expected: station resetting into bootloader).
-DEBUG: [after-bootloader-entry] /dev/ttyUSB1 0403:6001 SER=JCID_T3B_XXXXXXXXXXXX PROD=JCID_T3B
-DEBUG: Opened /dev/ttyUSB1
-DEBUG: TX (11): b'JC_identity'
-DEBUG: RX (7) after 150 ms: b'JC_boot'
-DEBUG: TX (10): b'JC_version'
-DEBUG: RX (29) after 150 ms: b'00160000JC_M_T3BS_version1.01'
-INFO: Bootloader version string: b'00160000JC_M_T3BS_version1.01'
-DEBUG: TX (31): b'0x00028900JC_M_T3BS_version1.01'
-DEBUG: RX (11) after 150 ms: b'update_jcxx'
-INFO: Sending firmware...
-DEBUG: TX (2048): b'JCID\xff\xff\xff...'
-DEBUG: RX (8) after 150 ms: b'ack_jcxx'
-  1/82 chunks (1%)
-  ...
-  81/82 chunks (99%)DEBUG: TX (256): b'\xff\xff\xff...'
-WARNING: Device dropped after last chunk (expected: station restarting).
-
-DEBUG: Opened /dev/ttyUSB0
-DEBUG: TX (11): b'JC_identity'
-DEBUG: RX (7) after 150 ms: b'JC_User'
-DEBUG: TX (10): b'JC_version'
-DEBUG: RX (21) after 150 ms: b'JC_M_T3BS_version1.16'
-INFO: After flash: identity b'JC_User', version b'JC_M_T3BS_version1.16'
-INFO: Update successful. Station now runs T3BS v1.16.
-```
-
-### 6.3 What is normal and what is not
 
 | Message | Meaning |
 |---|---|
@@ -392,18 +153,16 @@ INFO: Update successful. Station now runs T3BS v1.16.
 | `Device dropped after last chunk` | **Normal.** The station restarts into the new firmware. |
 | `RX ... after 150–200 ms` | **Normal.** This includes the 100 ms quiet-line wait. |
 | `Product mismatch` | **Stop.** Wrong firmware variant (T3B vs T3BS). |
-| `Bad ACK at chunk n/82` / `Device lost at chunk n/82` | See [Troubleshooting](#7-troubleshooting). **Do not power off.** |
+| `Bad ACK at chunk n/82` / `Device lost at chunk n/82` | See [Troubleshooting](#5-if-something-fails). **Do not power off.** |
 
 ---
 
-## 7. Troubleshooting
+## 5. If something fails
 
 | Symptom | Action |
 |---|---|
-| `error: externally-managed-environment` when running `pip` | The virtual environment is not active. Run `source venv/bin/activate` (see 3.3). |
-| `ModuleNotFoundError: No module named 'serial'` | Same cause: activate the virtual environment, or install the dependencies inside it |
-| `No T3x found` | Check `python3 -m serial.tools.list_ports -v`. Try a USB-A → USB-C data cable without a hub. Use `--port /dev/ttyUSB0`. |
-| `Permission denied` on `/dev/ttyUSB*` | `sudo usermod -aG dialout $USER`, then log in again, or run with `sudo venv/bin/python3 ...` |
+| `No T3x found` | Check `venv/bin/python -m serial.tools.list_ports -v`. Try a USB-A → USB-C data cable without a hub. Use `--port /dev/ttyUSB0`. |
+| `Permission denied` on `/dev/ttyUSB*` | INSTALLATION.md §3 (serial-port group), then log out and back in |
 | A probe check shows `[FAIL]` | Do not flash. Re-run the probe and investigate first. |
 | `No update start ACK` | Nothing has been written yet. Re-running is safe. |
 | Failure during the chunk transfer | **Do not power off or unplug.** The station stays in the bootloader. Re-run the same command; the script detects `JC_boot` and starts the transfer again. Keep the log file. |
@@ -418,7 +177,7 @@ recovery path.
 
 ---
 
-## 8. Technical notes
+## 6. Technical notes
 
 ### Serial protocol (115200 8N1)
 

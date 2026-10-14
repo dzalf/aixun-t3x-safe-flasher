@@ -15,13 +15,13 @@ system packages (step 1) and serial-port access (step 2).
 ## 0. What you will have at the end
 
 ```
-aixun/                      ← the workspace: any folder you choose (called $WS below)
+aixun/                      ← the workspace: any folder you choose (this guide uses ~/aixun)
 ├── aixun                   ← shortcut to project/tools/aixun.sh (created by setup)
 ├── project/                ← this repository (git clone)
 ├── venv/                   ← private Python environment (created by setup, ~280 MB with the GUI)
 ├── firmware/               ← AiXun .bin images you download (never committed)
 ├── results/                ← test output, probe reports, flash logs, flash history
-├── deliveries/             ← optional: patch archives exchanged as .zip (see CONTRIBUTING.md)
+├── deliveries/             ← zip snapshots of project/ (maintainer use; see docs/WORKFLOW.md §3)
 └── config/                 ← GUI preferences (created when the GUI first saves them)
 ```
 
@@ -149,17 +149,16 @@ id -nG
 
 ## 4. Step 3: create the workspace and get the code
 
-Choose **any** folder for the workspace. Set it once per terminal; nothing is saved system-wide.
+The workspace can be any folder. This guide uses `aixun` in your home folder (`~` means your home
+folder, e.g. `/home/yourname`). To use another folder, replace `~/aixun` with its path in the two commands
+below, and in the uninstall command of section 10.
 
 ```bash
-WS="$HOME/aixun"
-# example location; any path works, including one with spaces (keep the quotes)
-
-mkdir -p "$WS"
+mkdir -p ~/aixun
 # create the workspace folder
 
-cd "$WS"
-# every command from here on runs inside the workspace
+cd ~/aixun
+# every command from here on runs inside the workspace folder
 
 git clone https://github.com/dzalf/aixun-t3x-safe-flasher.git project
 # the repository MUST be cloned into a folder called 'project' inside the workspace
@@ -195,7 +194,7 @@ If you will contribute changes, clone **your fork** instead (see CONTRIBUTING.md
 exactly those (only on systems that meet the glibc requirement above):
 
 ```bash
-AIXUN_CONSTRAINTS="$WS/project/constraints/tested.txt" ./aixun reinstall
+AIXUN_CONSTRAINTS=~/aixun/project/constraints/tested.txt ./aixun reinstall
 # reinstalls the project into venv/ with those pinned versions
 ```
 
@@ -239,7 +238,15 @@ Firmware is **never** included in the repository. Download it into `firmware/`:
 
 Manual alternative: download the `.bin` from <https://aixun-updates.github.io/> and copy it into
 `firmware/`, then check it with `./aixun run t3x-image info firmware/JC_M_T3BS_1.16.bin`.
-Where those files really come from is explained in `docs/WORKFLOW.md` §8a.
+
+**Where the files really come from.** aixun-updates.github.io is an unofficial archive. Its page reads
+the version list from a data host named in its own `assets/js/config.js` (in October 2026:
+`https://usr.tnyzeq.icu/~dd/aixun-updates`), and its **Download** links point there too. The list also
+records a second address per file on `aixun-file.oss-cn-shenzhen.aliyuncs.com`; the name suggests AiXun's
+own storage, but that is **not confirmed**. `./aixun online` reads `config.js` every time, downloads from
+wherever the page links, and by default uses the second address **only** to check that both serve
+identical bytes (if they differ, nothing is saved). The site publishes no checksums; each saved file gets a
+`<file>.source.json` record with its SHA-256, both addresses and the comparison result.
 
 Keep a copy of the version currently on your station as a rollback image: the station's
 firmware cannot be read back.
@@ -280,8 +287,26 @@ sudo systemctl stop ModemManager
 sudo systemctl start ModemManager
 ```
 
-A permanent, opt-in udev rule that only tells ModemManager to ignore the station is in
-`docs/WORKFLOW.md` §10.
+To check whether ModemManager actually opens the station's port, run this right after plugging the
+station in:
+
+```bash
+journalctl -b -u ModemManager --since "-2 min" | grep -i tty
+# read-only: any ttyUSB lines mean ModemManager opened the station's port
+```
+
+Optional and system-wide: a udev rule that tells ModemManager to ignore **only** the station (it matches
+the station's USB serial number prefix `JCID_`). Not needed for the GUI to work:
+
+```bash
+echo 'ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="JCID_*", ENV{ID_MM_DEVICE_IGNORE}="1"' | sudo tee /etc/udev/rules.d/99-aixun-t3x.rules
+# writes the rule file (needs your password); it prints the rule back
+
+sudo udevadm control --reload-rules
+# loads it; it takes effect the next time the station is plugged in
+```
+
+To remove it again, see section 10.
 
 ---
 
@@ -312,7 +337,7 @@ After a Python upgrade by your distribution, or after moving/renaming the worksp
 ## 10. Uninstalling
 
 ```bash
-rm -rf "$WS"
+rm -rf ~/aixun
 # the workspace is self-contained: this removes code, venv, firmware, results and settings.
 # Copy firmware/ and results/ elsewhere first if you want to keep them.
 
@@ -367,4 +392,4 @@ venv/bin/t3x-gui --sim
 # GUI with the simulator; without --sim it uses ./firmware and ./results of the current folder
 ```
 
-The workspace layout, delivery branches and `check-publish` are only available through `./aixun`.
+The workspace layout, snapshots (`apply`/`accept`/`rollback`) and `check-publish` are only available through `./aixun`.

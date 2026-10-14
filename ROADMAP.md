@@ -21,7 +21,7 @@ The IDs `L2`, `L14` … refer to the limitations table in
 | H2 | **Other distributions**: the Fedora, openSUSE and Arch instructions in INSTALLATION.md §2 are written from the package names and have not been run | Follow INSTALLATION.md on that distribution and report each step that differed (package names, serial group, Qt libraries) | No |
 | H3 | **Other host machines**: a PC (x86_64) with a real station, and other ARM boards (Raspberry Pi 4, other single-board computers) | Probe report plus your board, distribution and Python version | Yes |
 | H4 | **GUI on other desktops**: GNOME, KDE, Xfce, on Wayland and X11 | Does the window open, do the dialogs work, any warnings in the terminal? Screenshots welcome | No (`./aixun gui --sim`) |
-| H5 | **ModemManager** (L14): does it send modem (AT) commands to the station's serial port when it's plugged in? | The output of the ModemManager check in docs/WORKFLOW.md §10 (troubleshooting table), run right after plugging the station in. Read-only | Yes |
+| H5 | **ModemManager** (L14): does it send modem (AT) commands to the station's serial port when it's plugged in? | The output of the ModemManager check in INSTALLATION.md §8 (`journalctl …`), run right after plugging the station in. Read-only | Yes |
 | H6 | **Bootloader strings of other models** (L2): the product check in bootloader mode is based on one observed string, `00160000JC_M_T3BS_version1.01` | If you flash another model, the flash log shows its string: post that line, with the USB serial number replaced | Yes (only if you flash anyway) |
 | H7 | **Recovery after a real interrupted transfer** (L17): only tested with the simulator | **Please don't cause one on purpose.** If it happens to you, post the flash log (serial replaced) and what you did to recover | Only if it happens |
 
@@ -30,7 +30,7 @@ The IDs `L2`, `L14` … refer to the limitations table in
 | ID | What | Where to start |
 |---|---|---|
 | G1 | A `--version` option that prints the package version on `t3x-probe`, `t3x-update`, `t3x-image`, `t3x-online`, `t3x-history` and `t3x-gui`. (`t3x-sim` already uses `--version` for the simulated firmware version; leave it as it is) | `t3x.__version__` in `src/t3x/__init__.py`; the argument parsers in `src/t3x/cli/` and `src/t3x/gui/app.py`; one test in `tests/test_cli.py` |
-| G2 | An example udev rule that gives the station a stable name such as `/dev/aixun-t3x`, plus a short section in docs/WORKFLOW.md. Match on the serial number prefix `JCID_`, not only on the USB IDs `0403:6001`, which every FTDI adapter shares | docs/WORKFLOW.md §10 already has an optional udev rule for ModemManager |
+| G2 | An example udev rule that gives the station a stable name such as `/dev/aixun-t3x`, plus a short section in INSTALLATION.md §8. Match on the serial number prefix `JCID_`, not only on the USB IDs `0403:6001`, which every FTDI adapter shares | INSTALLATION.md §8 already has an optional udev rule for ModemManager |
 | G3 | A linter in the test workflow (for example `ruff check`), with the findings fixed | `.github/workflows/tests.yml`; keep lines ≤ 120 characters |
 
 ## 3. Planned by the maintainer
