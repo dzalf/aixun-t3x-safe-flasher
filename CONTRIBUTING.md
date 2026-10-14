@@ -7,6 +7,10 @@ against a **simulated station**, so you don't need the hardware to contribute.
 This is an ordinary Python project (`pyproject.toml`, `src/` layout, `pytest`). Section 2 is all
 most contributors need. Section 3 describes the optional `./aixun` workspace the maintainer uses.
 
+**Looking for something to work on?** [ROADMAP.md](ROADMAP.md) lists where help is wanted (many items
+need no station, or only the read-only probe) and good first issues. The folder structure is in the
+[README](README.md#folder-structure).
+
 ---
 
 ## 1. Ground rules

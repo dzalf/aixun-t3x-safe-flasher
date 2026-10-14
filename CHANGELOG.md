@@ -3,6 +3,15 @@
 All notable changes. Dates are when the change was validated. Development detail per session is in
 [docs/devlog/](docs/devlog/); the integrated record is [docs/DEVELOPMENT_REPORT.md](docs/DEVELOPMENT_REPORT.md).
 
+## Unreleased
+
+### Documentation
+- ROADMAP.md: planned work, where help is wanted, good first issues, what is out of scope.
+- README: folder structure of the repository and of the workspace.
+- docs/MAINTAINERS.md rewritten: explicit commands with full paths, personal access token (permissions, error
+  messages), commit identity, everyday pushes, releases.
+- DEVELOPMENT_REPORT: L11 closed; feature backlog moved to ROADMAP.md.
+
 ## 0.1.0 — 2026-10-14 (first release of this repository)
 
 Hardware-validated: T3BS 1.16 → 1.15 → 1.16 (GUI, twice) on a Raspberry Pi 5 / Kali Linux.
