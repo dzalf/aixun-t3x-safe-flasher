@@ -228,7 +228,7 @@ Simulator scenarios available: hot-plug (`start(attached=False)`, `plug(wake_del
 | L8 | The frozen `tests/reference/t3xupdate_safe.py` keeps the S10 issue on purpose (it is the byte oracle). Do not use it to flash. Since 02a the golden test shields it with a `flush()` shim, because the issue made that test flaky on the Pi | Accepted; root wrapper uses the fixed package |
 | L9 | On the Pi, pyserial was loaded from Kali's system packages, not the venv | `./aixun status` shows where it loads from; `./aixun rebuild-venv` fixes it |
 | L10 | Simulator-based tests depend on thread timing. Two races found and fixed (01b; 02a: the oracle at the last chunk, now verified with the race forced); flakiness was checked with 12 repeated runs | Re-run on failure; report any repeat |
-| L11 | GUI never run on the Pi yet: PySide6 6.12 on Python 3.14 / aarch64 and Kali's X11 or Wayland session are untested | Open: session-02 test plan |
+| L11 | GUI never run on the Pi yet: PySide6 6.12 on Python 3.14 / aarch64 and Kali's X11 or Wayland session are untested | **Closed**: GUI used on the Pi from 02b onwards, including the GUI flashes 1.16 → 1.15 → 1.16 (twice). Other desktops: ROADMAP H4 |
 | L12 | Qt needs `libxcb-cursor0`, `libxkbcommon-x11-0`, `libegl1` and glibc ≥ 2.39 (PySide6 6.12 wheels); `./aixun setup`/`apply` warn if missing | Documented in WORKFLOW §2 |
 | L13 | The station now runs 1.16 and `JC_M_T3BS_1.16.bin` is in `firmware/`, so a rollback image for the installed version exists. `JC_M_T3BS_1.06.bin` is only needed to go back to 1.06 | Closed |
 | L14 | Silent or busy first seconds after plugging the station into the Pi: cause not confirmed. 2026-10-11: ModemManager is **active** on the Pi and logged `port ttyUSB0 released by device …usb1/1-1`, so it does track the station's port; whether it sends AT probes to it is not shown at its default log level. GUI retries; WORKFLOW §10 has read-only checks and an optional udev rule. Before a flash: consider stopping ModemManager temporarily (the station re-enumerates twice) | Open, mitigated |
@@ -240,16 +240,9 @@ Simulator scenarios available: hot-plug (`start(attached=False)`, `plug(wake_del
 | L21 | Earlier GUI runs may have left `~/.config/QtProject.conf` (Qt file-dialog history) | Harmless; delete if wanted. From 04 Qt's settings stay in the workspace |
 | L19 | Owner of the second download address (`aixun-file.oss-cn-shenzhen.aliyuncs.com`) not confirmed; used only to compare bytes | Accepted |
 
-### Feature backlog (proposed)
+### Feature backlog
 
-| Feature | Target |
-|---|---|
-| ~~GUI pages, chunk map, live log, firmware library, recovery from the last log, report export~~ | Done in 02 |
-| GUI fixes from the first Pi run | Session 03 |
-| `.desktop` launcher and README section | Session 03 |
-| Optional: download images and changelog from aixun-updates.github.io with checksum display | Later |
-| Optional: udev rule so the station gets a stable `/dev/aixun-t3x` name | Later |
-| Optional: `JC_hardware` in the GUI's "advanced" panel | Later |
+Moved to [ROADMAP.md](../ROADMAP.md) (planned work, help wanted, good first issues, out of scope).
 
 ---
 
@@ -270,7 +263,8 @@ Simulator scenarios available: hot-plug (`start(attached=False)`, `plug(wake_del
 | 03a | 2026-10-12 | Online list: IPv4 first with short connect timeouts, gzip, saved list with revalidation and offline use, `-v` timings; 96 passed | [session-03a.md](devlog/session-03a.md) |
 | 04 | 2026-10-12 | Offline-friendly apply + `reinstall`, preferences in `config/gui.json`, Flash speed/ETA, history import, opt-in newer-version notice, GUI-thread fix; 104 passed | [session-04.md](devlog/session-04.md) |
 | 05 | 2026-10-14 | New public repository `aixun-t3x-safe-flasher` prepared (one clean commit; revised the same day from an initial plan to reuse the console-scripts repository): INSTALLATION.md, CONTRIBUTING.md, MAINTAINERS.md, LICENSE, CHANGELOG, CI, check-publish, distro-aware script, `.gitignore` fix; version 0.1.0 | [session-05.md](devlog/session-05.md) |
-| 06 | planned | Desktop launcher, T3A groundwork, feedback from first users | n/a |
+| 05b | 2026-10-14 | Published on GitHub (v0.1.0). ROADMAP.md (help wanted, good first issues, planned, out of scope), folder structure in README, MAINTAINERS.md rewritten with explicit commands and the token procedure | [session-05b.md](devlog/session-05b.md) |
+| 06 | planned | See ROADMAP.md P1–P3: install without the workspace, desktop menu entry, T3A groundwork | n/a |
 
 ---
 

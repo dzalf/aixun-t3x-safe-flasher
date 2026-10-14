@@ -93,12 +93,58 @@ and `t3x-gui` inside the workspace's venv (`./aixun run <command>`).
 
 ---
 
+## Folder structure
+
+### This repository
+
+```text
+aixun-t3x-safe-flasher/
+├── README.md, INSTALLATION.md, CONTRIBUTING.md, ROADMAP.md, CHANGELOG.md, LICENSE
+├── pyproject.toml            package definition: dependencies, commands (t3x-probe, t3x-gui …)
+├── src/t3x/                  the Python package
+│   ├── core/                 engine without any user interface: image checks, protocol, serial link,
+│   │                         flasher, read-only probe, logs, history, firmware online
+│   ├── cli/                  command-line tools: t3x-probe, t3x-update, t3x-image, t3x-online, t3x-history
+│   ├── gui/                  PySide6 graphical updater: t3x-gui
+│   └── sim/                  simulated station for tests and demos: t3x-sim
+├── tests/                    pytest suite (runs against the simulator; no station needed)
+│   ├── reference/            the original, hardware-proven scripts, frozen: byte-for-byte reference
+│   └── data/                 example flash log with the USB serial number anonymised
+├── tools/
+│   ├── aixun.sh              workspace manager behind ./aixun (optional)
+│   └── check_publish.py      scan for files that must never be published
+├── constraints/tested.txt    exact package versions of the tested environment
+├── docs/                     development report, devlogs, workflow, guides, screenshots (img/)
+├── .github/                  automatic tests on GitHub, issue and pull-request templates
+└── t3x_probe.py, t3xupdate_safe.py   wrappers with the names of the earlier console scripts
+```
+
+### The workspace on your computer (made by `./aixun setup`)
+
+The repository is cloned into a folder called `project`. Setup creates the rest next to it. None of it
+is part of the repository:
+
+```text
+aixun/                        the workspace: any folder you choose
+├── aixun                     shortcut to project/tools/aixun.sh
+├── project/                  this repository (git clone)
+├── venv/                     private Python environment
+├── firmware/                 firmware images (.bin): downloaded by you, never committed
+├── results/                  flash logs, probe reports, history.jsonl (contain the station's USB serial number)
+├── config/                   GUI preferences (created the first time the GUI saves them)
+└── deliveries/               zip deliveries applied with ./aixun apply
+```
+
+---
+
 ## Documentation
 
 | Document | For |
 |---|---|
 | [INSTALLATION.md](INSTALLATION.md) | Setting up from scratch on any Linux distribution |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Developing with the `./aixun` workspace, tests, the simulator, hardware testing |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Developing: standard Python workflow, tests, the simulator, hardware testing |
+| [ROADMAP.md](ROADMAP.md) | What is planned, **where help is wanted**, good first issues |
+| [docs/MAINTAINERS.md](docs/MAINTAINERS.md) | Pushing changes and making releases |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Everything the workspace script does; where firmware downloads come from |
 | [docs/SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md) | The original script-based procedure, protocol and file-format notes, Windows driver background |
 | [docs/DEVELOPMENT_REPORT.md](docs/DEVELOPMENT_REPORT.md) | Architecture, safety invariants, decisions, test matrix, hardware log, limitations |

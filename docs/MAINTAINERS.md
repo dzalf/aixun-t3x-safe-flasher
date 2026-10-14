@@ -1,207 +1,233 @@
-# Maintainers: publishing and releasing
+# Maintainers: pushing changes and making releases
 
-Every command is commented. Replace the placeholders in angle brackets:
+Every command below is written out in full, with the folder it runs in. The paths are the
+maintainer's own:
 
-| Placeholder | Meaning | Example |
-|---|---|---|
-| `<handle>` | The GitHub account that will own the repository | `dzalf` |
-| `<Your Name>` | The name stored in your commits (becomes public) | `Daniel Melendrez` |
-| `<noreply-email>` | Your private GitHub commit address: GitHub → Settings → Emails → "Keep my email address private" shows it | `12345678+dzalf@users.noreply.github.com` |
+| What | Path |
+|---|---|
+| Workspace (contains `./aixun`, `project/`, `venv/`, `firmware/`, `results/`) | `/home/kali/Documents/Scripts/aixun` |
+| The repository (a clone of `github.com/dzalf/aixun-t3x-safe-flasher`) | `/home/kali/Documents/Scripts/aixun/project` |
 
-The repository name used throughout the documentation is **`aixun-t3x-safe-flasher`**. If you publish
-under another account or name, replace `dzalf/aixun-t3x-safe-flasher` in README.md, INSTALLATION.md,
-CONTRIBUTING.md, docs/WORKFLOW.md, docs/SCRIPTS_GUIDE.md and pyproject.toml before step 3.
+If your workspace is somewhere else, replace `/home/kali/Documents/Scripts/aixun` with your path. That
+is the only thing to replace.
 
 ---
 
 ## 1. What is published, and what never is
 
-The repository is the content of the workspace's `project/` folder: code, tests, docs, `tools/aixun.sh`,
-`constraints/`. Everything else in the workspace stays on your machine:
-
 | Workspace part | Published? | Why |
 |---|---|---|
-| `project/` | **Yes** (only the files git tracks) | Everything needed to rebuild the rest: `setup` or `pip install -e .` |
-| `venv/` | No | Machine-specific (absolute paths, CPU architecture, Python version), ~280 MB; rebuilt by setup. Exact versions: `constraints/tested.txt` |
-| `firmware/` | No | AiXun's files, not ours to redistribute; `./aixun online get` fetches them |
+| `project/` | **Yes** (only the files git tracks) | Code, tests, docs, `tools/aixun.sh`, `constraints/` |
+| `venv/` | No | Specific to one machine (absolute paths, processor type, Python version), ~280 MB; `./aixun setup` rebuilds it |
+| `firmware/` | No | AiXun's files, not ours to redistribute |
 | `results/` | No | Logs, reports and `history.jsonl` contain the station's USB serial number |
 | `config/`, `deliveries/` | No | Personal settings; old zip deliveries |
 
-Private backup of your full workspace (firmware and results included), kept off GitHub:
+`.gitignore` keeps these out, and `./aixun check-publish` checks for them before every push (section 4).
+
+Private backup of the whole workspace (firmware and results included), kept off GitHub:
 
 ```bash
-cd ~/Documents/Scripts/aixun
-tar --exclude='./venv' -czf ~/aixun-workspace-backup-$(date +%Y%m%d).tgz .
-# everything except venv/ (it's rebuilt anyway); keep this archive private
+cd /home/kali/Documents/Scripts/aixun
+# the workspace folder
+
+tar --exclude=./venv -czf /home/kali/aixun-workspace-backup.tgz .
+# packs everything except venv/ (it's rebuilt anyway) into /home/kali/aixun-workspace-backup.tgz.
+# Keep this file private: it contains your firmware and logs.
 ```
 
 ---
 
-## 2. First publication: a new repository with one clean commit
+## 2. GitHub access from the command line: a personal access token
 
-The new repository starts with a single commit, "Initial release 0.1.0". The development history (one
-commit per delivery) stays in your local workspace; its content is documented in `docs/devlog/` and
-`docs/DEVELOPMENT_REPORT.md`, which are published.
+`git push` needs proof that you are the account `dzalf`. GitHub doesn't accept the account password for
+this. You use a **personal access token** instead, a secret string made on the GitHub website.
 
-### Step 1: check the workspace
+### 2.1 What the token must allow
 
-```bash
-cd ~/Documents/Scripts/aixun
-# the workspace root (the folder containing ./aixun and project/)
+Make or edit it at github.com → profile picture → **Settings** → **Developer settings** →
+**Personal access tokens**. A token starting with `github_pat_` is "fine-grained"; one starting with
+`ghp_` is "classic".
 
-./aixun status
-# must show branch 'main', no uncommitted changes, venv "matches pyproject.toml"
-
-./aixun test
-# expected: 104 passed (with JC_M_T3B_1.16.bin and JC_M_T3BS_1.16.bin in firmware/)
-```
-
-### Step 2: create the empty repository on GitHub
-
-On <https://github.com/new>:
-
-| Field | Value |
+| Token type | Settings needed |
 |---|---|
-| Owner / Repository name | `<handle>` / `aixun-t3x-safe-flasher` |
-| Description | `Safe Linux firmware updater, read-only probe and GUI for AiXun T3x soldering stations` |
-| Visibility | Public |
-| Add a README / .gitignore / license | **Leave all unticked** (the project has its own; anything added here would conflict with the first push) |
+| Fine-grained (`github_pat_…`) | **Repository access:** includes `dzalf/aixun-t3x-safe-flasher` (a token limited to "selected repositories" does not cover repositories created after it). **Repository permissions:** **Contents** = Read and write, **Workflows** = Read and write |
+| Classic (`ghp_…`) | Scopes **repo** and **workflow** ticked |
 
-Then click **Create repository**. (Command-line alternative in step 5.)
+**Workflows** (or **workflow**) is needed because the repository contains `.github/workflows/tests.yml`.
+Without it GitHub refuses any push that includes a change to that folder.
 
-### Step 3: export a clean copy of the project
+### 2.2 Using it
 
-```bash
-EXPORT="$HOME/aixun-t3x-safe-flasher"
-# a NEW folder outside the workspace, used only to make the first commit
+When `git push` asks:
 
-mkdir "$EXPORT"
-# fails if it already exists: pick another name or delete the old one first
-
-git -C ~/Documents/Scripts/aixun/project archive HEAD | tar -x -C "$EXPORT"
-# copies exactly the files git tracks at the current commit. Nothing ignored (firmware,
-# logs, caches, venv, settings) can come along, and no history is copied.
-
-cd "$EXPORT" && ls
-# README.md, INSTALLATION.md, CONTRIBUTING.md, LICENSE, src/, tests/, tools/, docs/ …
+```text
+Username for 'https://github.com': dzalf
+Password for 'https://dzalf@github.com': (paste the token here)
 ```
 
-### Step 4: make the first commit
+Nothing appears on screen while you paste. That's normal; press Enter.
+
+### 2.3 Error messages and what they mean
+
+| Message | Meaning | Fix |
+|---|---|---|
+| `Invalid username or token` | The token is wrong, expired, or you typed your account password | Paste the token again; make a new one if it expired |
+| `Permission to dzalf/aixun-t3x-safe-flasher.git denied to dzalf` … `403` | The token was accepted, but it may not write to this repository | Section 2.1: repository access and **Contents** |
+| `refusing to allow a Personal Access Token to create or update workflow` | The token lacks the workflow permission | Section 2.1: **Workflows** / **workflow** |
+
+### 2.4 Optional: don't retype the token for an hour
 
 ```bash
-git init -b main
-# a brand-new repository whose first branch is called 'main'
-
-git config user.name "<Your Name>"
-git config user.email "<noreply-email>"
-# who the commit says made it; stored in THIS repository only. This name and address become
-# public with the commit; the noreply address keeps your real e-mail private.
-
-git add -A
-git commit -m "Initial release 0.1.0"
-# one commit containing the whole project
-
-python3 tools/check_publish.py .
-# scans the commit for firmware, logs, history files, real USB serial numbers, keys and tokens,
-# and lists the author(s) that will be public. Must end with "OK".
+git -C /home/kali/Documents/Scripts/aixun/project config credential.helper "cache --timeout=3600"
+# for this repository only: after you paste the token once, git keeps it in memory (not on disk)
+# for 3600 seconds = 1 hour
 ```
 
-### Step 5: authenticate and push
-
-```bash
-sudo apt install -y gh
-# GitHub's official command-line tool (package 'gh' on Kali/Debian/Ubuntu); skip if installed
-
-gh auth login
-# GitHub.com → HTTPS → "Yes" (authenticate Git with your GitHub credentials)
-# → "Login with a web browser": open the page it shows and type the one-time code.
-# The login is stored in ~/.config/gh (your account's credential; not in any repository)
-
-git remote add origin https://github.com/<handle>/aixun-t3x-safe-flasher.git
-# 'origin' = the repository created in step 2
-
-git push -u origin main
-# uploads the commit; '-u' remembers origin/main for later pushes
-```
-
-If you skipped step 2, this single command creates the repository and pushes in one go (instead of
-the last two commands):
-
-```bash
-gh repo create aixun-t3x-safe-flasher --public --source . --remote origin --push \
-  --description "Safe Linux firmware updater, read-only probe and GUI for AiXun T3x soldering stations"
-```
-
-### Step 6: first release
-
-```bash
-git tag -a v0.1.0 -m "0.1.0: package, GUI and workspace; hardware-validated on a T3BS"
-git push origin v0.1.0
-# an annotated version tag, uploaded
-
-gh release create v0.1.0 --title "0.1.0" --notes-file CHANGELOG.md
-# the release page on GitHub (you can trim the notes to the 0.1.0 section on the website)
-```
-
-### Step 7: on github.com
-
-| Where | What |
-|---|---|
-| Actions tab | The `tests` workflow runs on the push. Check it's green; if not, open the log |
-| Repository page → gear icon next to "About" | Topics: `aixun`, `soldering-station`, `firmware-updater`, `raspberry-pi`, `pyside6`, `linux` |
-| Settings → General → Features | Issues are on by default for new repositories; Discussions optional |
-
-### Step 8: point your workspace at the published repository
-
-From now on, develop on the published history so that your pushes fit on top of it:
-
-```bash
-cd ~/Documents/Scripts/aixun
-
-mv project project-dev-history
-# keep the old repository (full development history) as a private archive; it's never pushed
-
-git clone https://github.com/<handle>/aixun-t3x-safe-flasher.git project
-# the published repository becomes the workspace's project/
-
-git -C project config user.name "<Your Name>"
-git -C project config user.email "<noreply-email>"
-# same identity as in step 4, for future commits
-
-./aixun reinstall && ./aixun test
-# venv/ now runs the clone; everything should pass as before
-
-rm -rf "$EXPORT"
-# optional: the export folder has done its job
-```
-
-`firmware/`, `results/`, `config/` and `venv/` are untouched by this.
+To stop it: `git -C /home/kali/Documents/Scripts/aixun/project config --unset credential.helper`
 
 ---
 
-## 3. Everyday maintenance
+## 3. Commit identity (once)
+
+Every commit records a name and an e-mail address, and both become public when pushed. To keep your real
+address private, use GitHub's "noreply" address:
+
+1. github.com → profile picture → **Settings** → **Emails**.
+2. Tick **Keep my email addresses private**. The page then shows your noreply address, of the form
+   `<number>+dzalf@users.noreply.github.com`. Copy it exactly.
+3. Optional, same page: tick **Block command line pushes that expose my email**. GitHub then refuses any
+   push whose commits carry your real address.
+
+Set it for the repository:
 
 ```bash
-cd ~/Documents/Scripts/aixun
-git -C project switch -c feature/x        # work on a branch
-./aixun test && ./aixun check-publish     # before every push
-git -C project push -u origin feature/x   # then open a pull request and merge it on GitHub
-git -C project switch main && git -C project pull   # bring the merged result back
+git -C /home/kali/Documents/Scripts/aixun/project config user.name "Daniel Melendrez"
+# the name shown on your commits
+
+git -C /home/kali/Documents/Scripts/aixun/project config user.email "PASTE-THE-NOREPLY-ADDRESS"
+# replace PASTE-THE-NOREPLY-ADDRESS with the address copied in step 2 (keep the quotes)
+
+git -C /home/kali/Documents/Scripts/aixun/project config user.email
+# prints the address now in use: check it is the noreply one
 ```
 
-Reviewing someone's pull request locally:
+These settings live in this repository only (`project/.git/config`), not system-wide.
+
+---
+
+## 4. Everyday: from a change to GitHub
+
+### 4.1 A zip delivery
 
 ```bash
-git -C project fetch origin pull/<number>/head:pr-<number>
-git -C project switch pr-<number>
+cd /home/kali/Documents/Scripts/aixun
+# the workspace folder; every ./aixun command runs here
+
+./aixun apply t3x_sessionXX.zip
+# replace t3x_sessionXX.zip with the delivery's file name. Puts it on a new branch
+# delivery/t3x_sessionXX and updates venv/ if needed
+
 ./aixun test
-# ask for a hardware report whenever wire bytes or timing change
+# must pass
+
+./aixun accept
+# merges the delivery into main
+
+./aixun check-publish
+# must end with "OK": no firmware, logs, serial numbers, keys or tokens. Also lists the commit
+# authors, so you can see which e-mail addresses become public
+
+git -C /home/kali/Documents/Scripts/aixun/project push origin main
+# uploads to GitHub (username dzalf, password = token)
 ```
 
-## 4. Releasing a new version
+If the tests fail: `./aixun rollback` asks for confirmation (`y`), returns to `main` and deletes the delivery branch.
 
-1. Update `version` in `pyproject.toml` and `__version__` in `src/t3x/__init__.py`.
-2. Add a section to `CHANGELOG.md`; update `docs/DEVELOPMENT_REPORT.md` (status, test counts, hardware log).
-3. `./aixun reinstall && ./aixun test && ./aixun check-publish`
-4. Commit and push; then `git -C project tag -a vX.Y.Z -m "…"`, `git -C project push origin vX.Y.Z`,
-   and `gh release create vX.Y.Z` (run inside `project/`).
+### 4.2 Someone else's pull request
+
+On GitHub, a pull request has a number (for example **#12**). To test pull request 12 locally:
+
+```bash
+git -C /home/kali/Documents/Scripts/aixun/project fetch origin pull/12/head:pr-12
+# downloads its commits into a local branch called pr-12
+
+git -C /home/kali/Documents/Scripts/aixun/project switch pr-12
+# switches the project to that branch
+
+cd /home/kali/Documents/Scripts/aixun
+./aixun reinstall
+./aixun test
+# install its dependencies (only if they changed) and run the tests
+
+git -C /home/kali/Documents/Scripts/aixun/project switch main
+# back to main when done; merge the pull request with the button on GitHub
+```
+
+Ask for a hardware report when the change affects what is sent to the station or its timing.
+
+After merging on GitHub, bring the result back to the Pi:
+
+```bash
+git -C /home/kali/Documents/Scripts/aixun/project pull
+# downloads the merged changes into project/
+```
+
+---
+
+## 5. Making a release
+
+Example for version **0.2.0**. Replace `0.2.0` everywhere with the new version.
+
+1. Edit the version in two files: `version = "0.2.0"` in
+   `/home/kali/Documents/Scripts/aixun/project/pyproject.toml`, and `__version__ = "0.2.0"` in
+   `/home/kali/Documents/Scripts/aixun/project/src/t3x/__init__.py`.
+2. Add a `## 0.2.0 — <date>` section at the top of `CHANGELOG.md`, and update
+   `docs/DEVELOPMENT_REPORT.md` (status, test counts, hardware log).
+3. Then:
+
+```bash
+cd /home/kali/Documents/Scripts/aixun
+
+./aixun reinstall
+./aixun test
+# the new version number is installed into venv/ and everything passes
+
+git -C /home/kali/Documents/Scripts/aixun/project add -A
+git -C /home/kali/Documents/Scripts/aixun/project commit -m "Release 0.2.0"
+# records the version change
+
+./aixun check-publish
+# must end with "OK"
+
+git -C /home/kali/Documents/Scripts/aixun/project push origin main
+# uploads the commit
+
+git -C /home/kali/Documents/Scripts/aixun/project tag -a v0.2.0 -m "0.2.0"
+git -C /home/kali/Documents/Scripts/aixun/project push origin v0.2.0
+# marks the commit as version 0.2.0 and uploads the tag
+```
+
+4. On github.com: repository page → **Releases** → **Draft a new release**. Choose tag `v0.2.0`, set the
+   title to `0.2.0`, paste the 0.2.0 section of `CHANGELOG.md` as the description, then
+   **Publish release**.
+5. **Actions** tab: check that the `tests` run for the push is green.
+
+---
+
+## 6. Record: first publication (2026-10-14)
+
+How the repository was created, for reference. It doesn't need repeating.
+
+1. Empty repository `dzalf/aixun-t3x-safe-flasher` created on github.com (no README, .gitignore or
+   licence added there).
+2. The tracked files of the development repository were exported without history:
+   `git -C /home/kali/Documents/Scripts/aixun/project archive HEAD | tar -x -C /home/kali/Documents/Scripts/aixun-export`
+3. In `/home/kali/Documents/Scripts/aixun-export`: `git init -b main`, one commit
+   "Initial release 0.1.0", `python3 tools/check_publish.py .` → OK.
+4. Pushed with a personal access token (section 2): `git remote add origin https://github.com/dzalf/aixun-t3x-safe-flasher.git`,
+   `git push -u origin main`. The first attempt failed with the two errors in section 2.3; fixed by
+   giving the token access to the new repository and the workflow permission.
+5. Tag `v0.1.0` pushed; release page made on the website.
+6. In the workspace, the old development repository was renamed to `project-dev-history` (kept privately,
+   never pushed), and the published repository was cloned as `project`.
