@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+from .station import Scenario, SimStation  # noqa: F401

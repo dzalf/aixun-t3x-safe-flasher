@@ -1,0 +1,37 @@
+23:51:02.264 INFO: Full log: results/t3x_flash_20261011_235102.log
+23:51:02.265 INFO: Vector table: payload 165888 B (limit 190464) OK; SP 0x20005508 OK; Reset 0x08010165 OK
+23:51:02.266 INFO: Update file: T3BS v1.16 (166144 bytes, CRC 1EE0 OK)
+23:51:02.579 DEBUG: [initial] /dev/ttyUSB0 0403:6001 SER=JCID_T3B_TESTSERIAL01 PROD=JCID_T3B
+23:51:02.580 DEBUG: Opened /dev/ttyUSB0
+23:51:02.580 DEBUG: TX (10): b'JC_version'
+23:51:02.731 DEBUG: RX (21) after 150 ms: b'JC_M_T3BS_version1.15'
+23:51:02.732 DEBUG: TX (11): b'JC_identity'
+23:51:02.883 DEBUG: RX (7) after 150 ms: b'JC_User'
+23:51:02.883 INFO: Station: identity b'JC_User', version string b'JC_M_T3BS_version1.15'
+23:51:02.885 DEBUG: TX (11): b'JC_identity'
+23:51:03.036 DEBUG: RX (7) after 150 ms: b'JC_User'
+23:51:03.036 INFO: Entering bootloader...
+23:51:03.036 DEBUG: TX (10): b'JC_version'
+23:51:03.188 DEBUG: RX (21) after 150 ms: b'JC_M_T3BS_version1.15'
+23:51:03.189 DEBUG: TX (21): b'JC_M_T3BS_version1.15'
+23:51:03.395 WARNING: Device dropped off USB (expected: station resetting into bootloader).
+23:51:04.702 DEBUG: [after-bootloader-entry] /dev/ttyUSB1 0403:6001 SER=JCID_T3B_TESTSERIAL01 PROD=JCID_T3B
+23:51:04.703 DEBUG: Opened /dev/ttyUSB1
+23:51:04.703 DEBUG: TX (11): b'JC_identity'
+23:51:04.855 DEBUG: RX (7) after 150 ms: b'JC_boot'
+23:51:04.855 DEBUG: TX (10): b'JC_version'
+23:51:05.007 DEBUG: RX (29) after 150 ms: b'00160000JC_M_T3BS_version1.01'
+23:51:05.007 INFO: Bootloader version string: b'00160000JC_M_T3BS_version1.01'
+23:51:05.007 DEBUG: TX (31): b'0x00028900JC_M_T3BS_version1.01'
+23:51:05.159 DEBUG: RX (11) after 150 ms: b'update_jcxx'
+23:51:05.159 INFO: Sending firmware...
+23:51:21.721 DEBUG: TX (256): b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff...'
+23:51:21.835 WARNING: Device dropped after last chunk (expected: station restarting).
+23:51:24.141 DEBUG: [after-flash] /dev/ttyUSB0 0403:6001 SER=JCID_T3B_TESTSERIAL01 PROD=JCID_T3B
+23:51:24.141 DEBUG: Opened /dev/ttyUSB0
+23:51:24.142 DEBUG: TX (11): b'JC_identity'
+23:51:24.293 DEBUG: RX (7) after 150 ms: b'JC_User'
+23:51:24.293 DEBUG: TX (10): b'JC_version'
+23:51:24.445 DEBUG: RX (21) after 150 ms: b'JC_M_T3BS_version1.16'
+23:51:24.445 INFO: After flash: identity b'JC_User', version b'JC_M_T3BS_version1.16'
+23:51:24.445 INFO: Update successful. Station now runs T3BS v1.16.

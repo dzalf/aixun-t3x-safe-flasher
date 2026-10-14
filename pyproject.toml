@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "t3x-safe-updater"
+version = "0.1.0"
+description = "Read-only probe, hardened updater and GUI for AiXun T3x soldering stations"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "Dr. Daniel Melendrez, Ivory Electronics" }]
+dependencies = ["pyserial>=3.5"]
+
+[project.urls]
+Homepage = "https://github.com/dzalf/aixun-t3x-safe-flasher"
+Issues = "https://github.com/dzalf/aixun-t3x-safe-flasher/issues"
+Changelog = "https://github.com/dzalf/aixun-t3x-safe-flasher/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+gui = ["PySide6-Essentials>=6.5"]
+dev = ["pytest>=7", "setuptools>=68"]   # setuptools in the venv lets ./aixun re-install offline
+
+[project.scripts]
+t3x-probe = "t3x.cli.probe:main"
+t3x-update = "t3x.cli.update:main"
+t3x-image = "t3x.cli.image:main"
+t3x-online = "t3x.cli.online:main"
+t3x-history = "t3x.cli.history:main"
+t3x-sim = "t3x.sim.station:main"
+
+[project.gui-scripts]
+t3x-gui = "t3x.gui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: runs the reference scripts with their real delays",
+    "realfw: needs real AiXun images via T3X_FW_DIR (never committed)",
+]

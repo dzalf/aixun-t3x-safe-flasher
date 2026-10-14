@@ -1,0 +1,20 @@
+# Exact versions of the reference environment (pip constraints file).
+#
+# Recorded from the venv on the reference machine, 2026-10-14:
+#   Raspberry Pi 5, Kali Linux (aarch64), Python 3.14.7, glibc >= 2.39
+#   All tests passed and real T3BS flashes (1.16 -> 1.15 -> 1.16) were done with these.
+#
+# Use them to reproduce that environment exactly:
+#   AIXUN_CONSTRAINTS="$PWD/project/constraints/tested.txt" ./aixun reinstall
+# Without this file, setup installs the newest versions allowed by pyproject.toml.
+# On older distributions (glibc < 2.39 on aarch64, < 2.34 on x86_64) PySide6-Essentials 6.12.0
+# has no compatible wheel: don't use this file there, let pip pick an older PySide6.
+pyserial==3.5
+PySide6-Essentials==6.12.0
+shiboken6==6.12.0
+pytest==9.1.1
+pluggy==1.6.0
+iniconfig==2.3.1
+packaging==26.3
+Pygments==2.21.0
+setuptools==84.0.0

@@ -1,0 +1,62 @@
+# .gitignore for the project repository (the folder called project/ inside an aixun workspace).
+#
+# The workspace keeps venv/, firmware/, results/, deliveries/ and config/ NEXT TO project/,
+# so they never enter git. The rules below also protect against the same files being created
+# INSIDE project/ by mistake (e.g. running t3x-gui or t3x-update from this folder).
+# Note: git does not allow comments at the end of a pattern line; keep comments on their own line.
+
+# ---- Python ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- virtual environments ----------------------------------------------------------------
+venv/
+.venv/
+env/
+
+# ---- workspace folders, if ever created inside project/ ----------------------------------
+/firmware/
+/results/
+/deliveries/
+/config/
+
+# ---- vendor firmware images: never redistributed from this repository --------------------
+*.bin
+
+# ---- flash logs, history and download records: contain the station's USB serial number ---
+*.log
+history.jsonl
+*.source.json
+t3x_report_*.json
+probe_*.json
+probe_*.txt
+pytest_*.txt
+.sim-ports.json
+
+# ---- anonymised example log used by the tests (must stay tracked) ------------------------
+!tests/data/
+!tests/data/*.log
+
+# ---- GUI / Qt preferences (personal) -----------------------------------------------------
+gui.json
+QtProject.conf
+
+# ---- delivery archives -------------------------------------------------------------------
+*.zip
+
+# ---- editors and operating systems -------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
