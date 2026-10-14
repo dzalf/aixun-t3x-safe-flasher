@@ -8,8 +8,7 @@ This is an ordinary Python project (`pyproject.toml`, `src/` layout, `pytest`). 
 most contributors need. Section 3 describes the optional `./aixun` workspace the maintainer uses.
 
 **Looking for something to work on?** [ROADMAP.md](ROADMAP.md) lists where help is wanted (many items
-need no station, or only the read-only probe) and good first issues. The folder structure is in the
-[README](README.md#folder-structure).
+need no station, or only the read-only probe) and good first issues.
 
 ---
 
@@ -136,26 +135,15 @@ def test_my_case():
 ## 3. Optional: the `./aixun` workspace
 
 The maintainer works in a self-contained folder that keeps the code, its environment, firmware and
-results side by side, managed by `tools/aixun.sh`. It's optional; it helps if you also flash real
-stations.
+results side by side, managed by `tools/aixun.sh`. It helps if you also flash real stations; you don't
+need it to contribute. Setup: [INSTALLATION.md](INSTALLATION.md) (clone your fork as `project`).
+Commands: [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
-```bash
-mkdir -p ~/aixun && cd ~/aixun
-git clone https://github.com/<your-user>/aixun-t3x-safe-flasher.git project
-# the clone must be in a folder called 'project' inside the workspace
+## 3a. AI assistants
 
-./project/tools/aixun.sh setup
-# creates venv/, firmware/, results/ next to project/, installs everything, makes ./aixun
-
-./aixun test            # same tests; output saved in results/
-./aixun gui --sim       # GUI with the simulator
-./aixun probe X.bin     # read-only probe of a real station; report saved in results/
-./aixun check-publish   # the pre-push scan of section 2.2
-./aixun help            # everything else
-```
-
-Day-to-day git commands are the normal ones, run inside `project/` (or with `git -C project …`).
-Details: [docs/WORKFLOW.md](docs/WORKFLOW.md).
+This project was developed with an AI coding assistant (README, "How this project is developed"). You
+may use one too, or not: it isn't needed. Either way the same rules apply. You are responsible for every
+line you submit, the tests must pass, and the pull request must say what was tested on hardware.
 
 ---
 
@@ -178,16 +166,14 @@ Python version) and what you did. The "Hardware report" issue template lists the
 
 ## 5. Where things are
 
-| Path | Contents |
+The folder structure is in the [README](README.md#folder-structure). Inside the package:
+
+| Path | Modules |
 |---|---|
-| `src/t3x/core/` | UI-free engine: `image` (file checks), `protocol`, `link` (serial, reconnect), `flasher` (update state machine), `probe` (read-only), `logfile`, `history`, `online`, `environment`, `changelog` |
-| `src/t3x/cli/` | `t3x-probe`, `t3x-update`, `t3x-image`, `t3x-online`, `t3x-history` |
-| `src/t3x/gui/` | PySide6 GUI: `window` (pages), `workers` (threads), `widgets`, `theme`, `config`, `app` (entry point `t3x-gui`) |
-| `src/t3x/sim/` | Simulated station (`t3x-sim`) |
-| `tests/` | pytest suite; `tests/reference/` = frozen original scripts used as byte-level references (don't edit); `tests/data/` = anonymised example logs |
-| `tools/` | `aixun.sh` (optional workspace manager), `check_publish.py` (pre-push scan) |
-| `docs/` | Development report, per-session devlogs, workflow, scripts guide, screenshots |
-| `constraints/tested.txt` | Exact package versions of the reference environment |
+| `src/t3x/core/` | `image` (file checks), `protocol`, `link` (serial, reconnect), `flasher` (update state machine), `probe` (read-only), `logfile`, `history`, `online`, `environment`, `changelog` |
+| `src/t3x/gui/` | `window` (pages), `workers` (threads), `widgets`, `theme`, `config`, `app` (entry point `t3x-gui`) |
+
+Don't edit `tests/reference/`: those frozen scripts are the byte-level reference for the tests.
 
 Style: follow the surrounding code (type hints, dataclasses, ≤ 120 characters per line, docstrings that
 say *why*). Shell code must pass `shellcheck tools/aixun.sh`.

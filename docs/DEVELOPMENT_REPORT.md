@@ -4,7 +4,8 @@
 
 | | |
 |---|---|
-| Last updated | Session 05, 2026-10-14 |
+| Last updated | Session 05c, 2026-10-14 |
+| Terms | **Session** = one AI-assisted development session; **delivery** = the zip snapshot it produced, applied with `./aixun apply` (README, "How this project is developed") |
 | Package version | `0.1.0` |
 | Target platform | Linux (tested: Raspberry Pi 5, Kali Linux). Windows is out of scope for now (driver issue, §9) |
 | Licence | GPL-2.0-or-later |
@@ -16,7 +17,7 @@
 | Component | State | Tests | Hardware-verified |
 |---|---|---|---|
 | Reference scripts (`tests/reference/`) | Frozen | Oracle for equivalence tests | ✅ 2026-10-08, T3BS 1.06 → 1.16 |
-| Core: image, protocol, link, flasher, probe, logfile, changelog | Done | 42 | ✅ probe path (read-only, 2026-10-11); flash path ⏳ |
+| Core: image, protocol, link, flasher, probe, logfile, changelog | Done | 42 | ✅ probe (2026-10-11) and flash path (GUI flashes, 2026-10-11) |
 | Simulator (`t3x-sim`) | Done; re-enumeration now changes the device name (02) | Used by 40 tests | n/a |
 | CLI: `t3x-probe`, `t3x-update`, `t3x-image` | Done | 10 + 3 equivalence | ✅ `t3x-probe` on the Pi; `t3x-update` ⏳ |
 | Compatibility wrappers (`t3x_probe.py`, `t3xupdate_safe.py`) | Done | via CLI tests | ⏳ pending |
@@ -24,7 +25,7 @@
 | GUI (`t3x-gui`, PySide6) | Done (02); hot-plug fixed (02b); history + online (03) | 11 end-to-end (offscreen, simulator) | ✅ flashed T3BS 1.16 → 1.15 → 1.16 on the Pi (2026-10-11) |
 | Flash history (`core/history.py`) | Done (03) | 4 | Written by every flash from 03 on |
 | Online catalogue (`core/online.py`, `t3x-online`) | Done (03); faster + saved list (03a) | 21 | ✅ live list on the Pi (2026-10-12) |
-| Workspace settings, flash estimate, history import, update notice (04) | Done | 8 | ⏳ |
+| Workspace settings, flash estimate, history import, update notice (04) | Done | 8 | ✅ in use on the Pi (reported by the maintainer) |
 | Publication: INSTALLATION, CONTRIBUTING, LICENSE, CI, check-publish (05) | Done | CI on first push | n/a |
 
 ---
@@ -177,7 +178,7 @@ The full tables are in the README (§8 "Technical notes"). Facts observed on har
 
 ## 7. Test matrix
 
-`pytest` → **104 passed** on the development container (Python 3.13, PySide6 6.12, session 04); Pi: 96 passed (session 03a); 58 also with the last-chunk race forced (02a). Pi, delivery 02: 57 passed, 1 failed (oracle race, fixed in 02a).
+`pytest` → **104 passed** in the assistant's development container (Python 3.13 and 3.10, PySide6 6.12, session 05); 103 passed + 1 skipped without the real firmware files. CI (GitHub Actions) runs the same suite on every push; the result of its first run had not been confirmed when this was written.
 
 | File | Count | Focus |
 |---|---|---|
@@ -203,14 +204,14 @@ Simulator scenarios available: hot-plug (`start(attached=False)`, `plug(wake_del
 | 2026-10-08 | Pi 5 / Kali | T3B label, T3BS firmware | Probe, 8/8 PASS, reader 100/100 | `t3x_probe.py` (s00) | ✅ |
 | 2026-10-08 | Pi 5 / Kali | same | Flash 1.06 → 1.16 | `t3xupdate_safe.py` (s00) | ✅ 82/82, version read back |
 | 2026-10-11 | Pi 5 / Kali, Py 3.14.7 | none (simulator) | `pytest` | package (s01) | ❌ 42/1/1: EIO from `tcdrain` at the last chunk, fixed in 01a |
-| 2026-10-11 | Pi 5 / Kali, Py 3.14.7, isolated venv | none (simulator) + real images T3B/T3BS 1.16 | `./aixun setup` + `./aixun test` | package (s01c), commit fd07717 | ✅ **49 passed** in 121.5 s (incl. equivalence tests and real-image test) |
-| 2026-10-11 | Pi 5 / Kali, Py 3.14.7 | none (simulator) | `./aixun test` | delivery 02, commit 3bf3ad2 | ❌ 57/1: the frozen oracle lost the last-chunk race (EIO); fixed in 02a |
+| 2026-10-11 | Pi 5 / Kali, Py 3.14.7, isolated venv | none (simulator) + real images T3B/T3BS 1.16 | `./aixun setup` + `./aixun test` | package (s01c) | ✅ **49 passed** in 121.5 s (incl. equivalence tests and real-image test) |
+| 2026-10-11 | Pi 5 / Kali, Py 3.14.7 | none (simulator) | `./aixun test` | delivery 02 | ❌ 57/1: the frozen oracle lost the last-chunk race (EIO); fixed in 02a |
 | 2026-10-11 | Pi 5 / Kali, Py 3.14.7 | T3BS 1.16 | `./aixun gui` (read-only) | delivery 02 | ⚠ Station found when plugged in before start; plugged in after start → probe locked the controls for a long time. Fixed in 02b |
 | 2026-10-11 | Pi 5 / Kali, Py 3.14.7 | T3BS (station reports **1.16**: the 2026-10-08 flash persisted) | `./aixun probe JC_M_T3BS_1.16.bin` (read-only) | package (s01c) | ✅ 8/8 PASS, reader test 100/100, latency 5–61 ms, "same version – re-flash" |
 | 2026-10-11 23:49 | Pi 5 / Kali, Py 3.14.7 | T3BS | **Downgrade 1.16 → 1.15** | `t3x-gui` (s02c) | ✅ 82/82, drop after echo 0.26 s, bootloader on ttyUSB1, transfer 16.5 s, back on ttyUSB0 as `JC_User` **1.15** |
 | 2026-10-11 23:51 | Pi 5 / Kali, Py 3.14.7 | T3BS | **Upgrade 1.15 → 1.16** | `t3x-gui` (s02c) | ✅ 82/82, transfer 16.7 s, read back **1.16**. The version change proves both writes landed |
 | 2026-10-12 | Pi 5 / Kali, Py 3.14.7 | none | `./aixun online list -v`, `online compare` | delivery 03a | ✅ list revalidated with HTTP 304 (0.33 s + 0.85 s, both via IPv4); local `JC_M_T3BS_1.15.bin` and `JC_M_T3BS_1.16.bin` **byte-identical** to the site's copies (SHA-256 96808fb8… and 9157cb06…) |
-| by 2026-10-14 | Pi 5 / Kali, Py 3.14.7 | T3BS | GUI tested throughout; **1.16 → 1.15 → 1.16 again** | `t3x-gui` (s04) | ✅ reported by the user (logs not reviewed here) |
+| by 2026-10-14 | Pi 5 / Kali, Py 3.14.7 | T3BS | GUI tested throughout; **1.16 → 1.15 → 1.16 again** | `t3x-gui` (s04) | ✅ reported by the maintainer (logs not reviewed) |
 
 ---
 
@@ -229,9 +230,9 @@ Simulator scenarios available: hot-plug (`start(attached=False)`, `plug(wake_del
 | L9 | On the Pi, pyserial was loaded from Kali's system packages, not the venv | `./aixun status` shows where it loads from; `./aixun rebuild-venv` fixes it |
 | L10 | Simulator-based tests depend on thread timing. Two races found and fixed (01b; 02a: the oracle at the last chunk, now verified with the race forced); flakiness was checked with 12 repeated runs | Re-run on failure; report any repeat |
 | L11 | GUI never run on the Pi yet: PySide6 6.12 on Python 3.14 / aarch64 and Kali's X11 or Wayland session are untested | **Closed**: GUI used on the Pi from 02b onwards, including the GUI flashes 1.16 → 1.15 → 1.16 (twice). Other desktops: ROADMAP H4 |
-| L12 | Qt needs `libxcb-cursor0`, `libxkbcommon-x11-0`, `libegl1` and glibc ≥ 2.39 (PySide6 6.12 wheels); `./aixun setup`/`apply` warn if missing | Documented in WORKFLOW §2 |
+| L12 | Qt needs `libxcb-cursor0`, `libxkbcommon-x11-0`, `libegl1` and glibc ≥ 2.39 (PySide6 6.12 wheels); `./aixun setup`/`apply` warn if missing | Documented in INSTALLATION.md §1–2 |
 | L13 | The station now runs 1.16 and `JC_M_T3BS_1.16.bin` is in `firmware/`, so a rollback image for the installed version exists. `JC_M_T3BS_1.06.bin` is only needed to go back to 1.06 | Closed |
-| L14 | Silent or busy first seconds after plugging the station into the Pi: cause not confirmed. 2026-10-11: ModemManager is **active** on the Pi and logged `port ttyUSB0 released by device …usb1/1-1`, so it does track the station's port; whether it sends AT probes to it is not shown at its default log level. GUI retries; WORKFLOW §10 has read-only checks and an optional udev rule. Before a flash: consider stopping ModemManager temporarily (the station re-enumerates twice) | Open, mitigated |
+| L14 | Silent or busy first seconds after plugging the station into the Pi: cause not confirmed. 2026-10-11: ModemManager is **active** on the Pi and logged `port ttyUSB0 released by device …usb1/1-1`, so it does track the station's port; whether it sends AT probes to it is not shown at its default log level. GUI retries; INSTALLATION.md §8 has a read-only check and an optional udev rule. Before a flash: consider stopping ModemManager temporarily (the station re-enumerates twice) | Open, mitigated |
 | L15 | Simulator: `--sim-fail-at-chunk N` fails **every** transfer, so Resume in the GUI demo fails again at chunk N (seen in the Pi's 21:45 logs). Real cable pulls happen once | **Closed** in 03 |
 | L16 | Simulator flash logs are written to the same `results/` as real ones; the Recovery page reads the newest log, which could be a simulator log | **Closed** in 03 |
 | L17 | Recovery from an interrupted **real** transfer still untested on hardware (only simulated) | Open; deliberate test not recommended |
@@ -263,14 +264,14 @@ Moved to [ROADMAP.md](../ROADMAP.md) (planned work, help wanted, good first issu
 | 03a | 2026-10-12 | Online list: IPv4 first with short connect timeouts, gzip, saved list with revalidation and offline use, `-v` timings; 96 passed | [session-03a.md](devlog/session-03a.md) |
 | 04 | 2026-10-12 | Offline-friendly apply + `reinstall`, preferences in `config/gui.json`, Flash speed/ETA, history import, opt-in newer-version notice, GUI-thread fix; 104 passed | [session-04.md](devlog/session-04.md) |
 | 05 | 2026-10-14 | New public repository `aixun-t3x-safe-flasher` prepared (one clean commit; revised the same day from an initial plan to reuse the console-scripts repository): INSTALLATION.md, CONTRIBUTING.md, MAINTAINERS.md, LICENSE, CHANGELOG, CI, check-publish, distro-aware script, `.gitignore` fix; version 0.1.0 | [session-05.md](devlog/session-05.md) |
-| 05b | 2026-10-14 | Published on GitHub (v0.1.0). ROADMAP.md (help wanted, good first issues, planned, out of scope), folder structure in README, MAINTAINERS.md rewritten with explicit commands and the token procedure | [session-05b.md](devlog/session-05b.md) |
+| 05b | 2026-10-14 | Published on GitHub (v0.1.0). ROADMAP.md (help wanted, good first issues, planned, out of scope), folder structure in README, MAINTAINERS.md rewritten with explicit commands and the token procedure. 05c–05d: public docs made generic (no personal paths), AI-assisted development explained, WORKFLOW/INSTALLATION/SCRIPTS_GUIDE de-duplicated | [session-05b.md](devlog/session-05b.md) |
 | 06 | planned | See ROADMAP.md P1–P3: install without the workspace, desktop menu entry, T3A groundwork | n/a |
 
 ---
 
 ## 11. How to amend this project
 
-For receiving and testing deliveries on the target machine (git branches, venv, what to send back), see [`WORKFLOW.md`](WORKFLOW.md).
+Applying and testing a zip snapshot (`./aixun apply`, `accept`, `rollback`): [`WORKFLOW.md`](WORKFLOW.md) §3. Pull requests: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 
 1. Read §3 and §5 first. If a change would alter the wire bytes, it needs a new equivalence argument and a hardware test before merging.

@@ -132,7 +132,7 @@ aixun/                        the workspace: any folder you choose
 ├── firmware/                 firmware images (.bin): downloaded by you, never committed
 ├── results/                  flash logs, probe reports, history.jsonl (contain the station's USB serial number)
 ├── config/                   GUI preferences (created the first time the GUI saves them)
-└── deliveries/               zip deliveries applied with ./aixun apply
+└── deliveries/               zip snapshots of project/ applied with ./aixun apply (see below)
 ```
 
 ---
@@ -145,10 +145,10 @@ aixun/                        the workspace: any folder you choose
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Developing: standard Python workflow, tests, the simulator, hardware testing |
 | [ROADMAP.md](ROADMAP.md) | What is planned, **where help is wanted**, good first issues |
 | [docs/MAINTAINERS.md](docs/MAINTAINERS.md) | Pushing changes and making releases |
-| [docs/WORKFLOW.md](docs/WORKFLOW.md) | Everything the workspace script does; where firmware downloads come from |
-| [docs/SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md) | The original script-based procedure, protocol and file-format notes, Windows driver background |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md) | Reference for the `./aixun` workspace: every command, snapshots, the simulator |
+| [docs/SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md) | Why not Windows, T3B vs T3BS, protocol and file format, the standalone scripts |
 | [docs/DEVELOPMENT_REPORT.md](docs/DEVELOPMENT_REPORT.md) | Architecture, safety invariants, decisions, test matrix, hardware log, limitations |
-| [docs/devlog/](docs/devlog/) | One log per development session |
+| [docs/devlog/](docs/devlog/) | One log per development session (see below) |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
 
 ---
@@ -159,6 +159,27 @@ aixun/                        the workspace: any folder you choose
 |---|---|
 | [c0d3z3r0/aixun_t3x_updater](https://github.com/c0d3z3r0/aixun_t3x_updater) | The original console updater this work is based on |
 | [dzalf/aixun_t3x_safe_updater_and_probe](https://github.com/dzalf/aixun_t3x_safe_updater_and_probe) | The earlier console scripts (`t3x_probe.py`, `t3xupdate_safe.py`); still available, unchanged. This repository includes equivalent wrappers |
+
+---
+
+## How this project is developed
+
+This project was developed in working sessions with an AI coding assistant (Claude, by Anthropic).
+In each session the assistant made the changes in its own environment and handed them over as a **zip
+snapshot of the project folder**. The maintainer applied the snapshot on a test branch with
+`./aixun apply`, tested it on a Raspberry Pi 5 with a real station, and kept it (`./aixun accept`) or
+discarded it (`./aixun rollback`). Each session is recorded in [docs/devlog/](docs/devlog/). Every
+firmware write to a real station was decided and carried out by the maintainer.
+
+**An AI assistant is not needed to work on this project.** It made development much faster, but the
+code is ordinary Python, the tests are ordinary pytest, and contributions arrive as ordinary pull
+requests ([CONTRIBUTING.md](CONTRIBUTING.md)). A snapshot zip isn't special either: it is the project
+folder packed by git, and anyone can make one:
+
+```bash
+git -C project archive --format=zip --prefix=project/ -o my_change.zip HEAD
+# packs every file git tracks in project/ into my_change.zip, inside a top folder called project/
+```
 
 ---
 
